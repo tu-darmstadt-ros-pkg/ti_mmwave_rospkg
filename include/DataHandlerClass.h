@@ -21,6 +21,20 @@
 #include <cmath>
 #define COUNT_SYNC_MAX 2
 
+// custom includes
+#include "std_msgs/MultiArrayLayout.h"
+#include "std_msgs/MultiArrayDimension.h"
+#include "std_msgs/UInt32MultiArray.h"
+#include "std_msgs/Float32MultiArray.h"
+#include "std_msgs/Float32.h"
+#include "std_msgs/UInt32.h"
+#include "std_msgs/UInt16.h"
+#include <ti_mmwave_rospkg/RangeScan.h>
+#include <ti_mmwave_rospkg/ObjRanges.h>
+#include <ti_mmwave_rospkg/RadarScans.h>
+#include "NumCpp.hpp"
+
+
 class DataUARTHandler{
     
 public:
@@ -137,6 +151,12 @@ private:
     ros::Publisher DataUARTHandler_pub;
     ros::Publisher radar_scan_pub;
     ros::Publisher marker_pub;
+
+    // custom pubs
+    ros::Publisher radar_scans_pub;
+    ros::Publisher range_scan_pub;
+    ros::Publisher noise_scan_pub;
+    ros::Publisher obj_range_scan_pub;
 };
 
 #endif 

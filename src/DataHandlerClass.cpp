@@ -7,6 +7,13 @@ DataUARTHandler::DataUARTHandler(ros::NodeHandle* nh) : currentBufp(&pingPongBuf
     maxAllowedElevationAngleDeg = 90; // Use max angle if none specified
     maxAllowedAzimuthAngleDeg = 90; // Use max angle if none specified
 
+
+    // custom pubs
+    radar_scans_pub = nh->advertise<ti_mmwave_rospkg::RadarScans>("/ti_mmwave/radar_scans", 100);
+    range_scan_pub = nh->advertise<ti_mmwave_rospkg::RangeScan>("/ti_mmwave/range_scan", 100);
+    noise_scan_pub = nh->advertise<ti_mmwave_rospkg::RangeScan>("/ti_mmwave/noise_scan", 100);
+    obj_range_scan_pub = nh->advertise<ti_mmwave_rospkg::ObjRanges>("/ti_mmwave/obj_range_scan", 100);
+
     // Wait for parameters
     while(!nh->hasParam("/ti_mmwave/doppler_vel_resolution")){}
 
@@ -60,6 +67,7 @@ void DataUARTHandler::setMaxAllowedAzimuthAngleDeg(int myMaxAllowedAzimuthAngleD
 void *DataUARTHandler::readIncomingData(void)
 {
     
+
     int firstPacketReady = 0;
     uint8_t last8Bytes[8] = {0};
     
@@ -243,6 +251,9 @@ void *DataUARTHandler::sortIncomingData( void )
     boost::shared_ptr<pcl::PointCloud<pcl::PointXYZI>> RScan(new pcl::PointCloud<pcl::PointXYZI>);
     ti_mmwave_rospkg::RadarScan radarscan;
 
+    ti_mmwave_rospkg::ObjRanges objRanges;
+    ti_mmwave_rospkg::RadarScans radarScans;
+
     //wait for first packet to arrive
     pthread_mutex_lock(&countSync_mutex);
     pthread_cond_wait(&sort_go_cv, &countSync_mutex);
@@ -357,6 +368,10 @@ void *DataUARTHandler::sortIncomingData( void )
             RScan->is_dense = 1;
             RScan->points.resize(RScan->width * RScan->height);
             
+            radarScans.header.frame_id = frameID;
+            radarScans.header.stamp = ros::Time::now();
+            radarScans.radar_scans.resize(mmwData.numObjOut);
+
             // Calculate ratios for max desired elevation and azimuth angles
             if ((maxAllowedElevationAngleDeg >= 0) && (maxAllowedElevationAngleDeg < 90)) {
                 maxElevationAngleRatioSquared = tan(maxAllowedElevationAngleDeg * M_PI / 180.0);
@@ -369,13 +384,19 @@ void *DataUARTHandler::sortIncomingData( void )
             //ROS_INFO("maxAzimuthAngleRatio = %f", maxAzimuthAngleRatio);
             //ROS_INFO("mmwData.numObjOut before = %d", mmwData.numObjOut);
 
+            objRanges.objIndex.clear();
+            objRanges.objIndex.resize(mmwData.numObjOut);
+            objRanges.objIndex.shrink_to_fit();
+
             // Populate pointcloud
             while( i < mmwData.numObjOut ) {
                 if (((mmwData.header.version >> 24) & 0xFF) < 3) { // SDK version is older than 3.x
                     //get object range index
                     memcpy( &mmwData.objOut.rangeIdx, &currentBufp->at(currentDatap), sizeof(mmwData.objOut.rangeIdx));
                     currentDatap += ( sizeof(mmwData.objOut.rangeIdx) );
-                    
+                    objRanges.objIndex[i] = mmwData.objOut.rangeIdx;
+                    // ROS_INFO("%d", objRanges.objIndex[i]);
+
                     //get object doppler index
                     memcpy( &mmwData.objOut.dopplerIdx, &currentBufp->at(currentDatap), sizeof(mmwData.objOut.dopplerIdx));
                     currentDatap += ( sizeof(mmwData.objOut.dopplerIdx) );
@@ -424,8 +445,9 @@ void *DataUARTHandler::sortIncomingData( void )
                     
                     radarscan.header.frame_id = frameID;
                     radarscan.header.stamp = ros::Time::now();
-
-                    radarscan.point_id = i;
+                    
+                    // radarscan.point_id = i;  // TODO old
+                    radarscan.point_id = mmwData.objOut.rangeIdx;
                     radarscan.x = temp[1];
                     radarscan.y = -temp[0];
                     radarscan.z = temp[2];
@@ -434,6 +456,10 @@ void *DataUARTHandler::sortIncomingData( void )
                     radarscan.doppler_bin = tmp;
                     radarscan.bearing = temp[6];
                     radarscan.intensity = temp[5];
+
+                    radarScans.radar_scans[i] = radarscan;
+                    // memcpy( &radarScans.radar_scans.at(i), &radarscan, sizeof(radarscan));
+
                 } else { // SDK version is 3.x+
                     //get object x-coordinate (meters)
                     memcpy( &mmwData.newObjOut.x, &currentBufp->at(currentDatap), sizeof(mmwData.newObjOut.x));
@@ -483,12 +509,13 @@ void *DataUARTHandler::sortIncomingData( void )
                            )
                 {
                     radar_scan_pub.publish(radarscan);
+                    obj_range_scan_pub.publish(objRanges);
                 }
                 i++;
             }
 
             sorterState = CHECK_TLV_TYPE;
-            
+
             break;
 
         case READ_SIDE_INFO:
@@ -527,24 +554,57 @@ void *DataUARTHandler::sortIncomingData( void )
 
         case READ_LOG_MAG_RANGE:
             {
+                //ROS_INFO("DataUARTHandler Sort Thread : tlvType = %d, tlvLen = %d, vrange=%f", (int) tlvType, tlvLen, vrange);
+                uint16_t range_value = 0;
+                ti_mmwave_rospkg::RangeScan range_scan;
+                range_scan.header.frame_id = frameID;
+                range_scan.header.stamp = ros::Time::now();
+                //uint32_t range_array[256];
+                /*std_msgs::UInt32MultiArray range_array;
+                range_array.layout.dim.push_back(std_msgs::MultiArrayDimension());
+                range_array.layout.dim[0].size = 256;
+                range_array.layout.dim[0].stride = 1;
+                range_array.layout.dim[0].label = "x"; // or whatever name you typically use to index vec1
+                range_array.data.clear();*/
+                int k = 0;
+                while (k < tlvLen) {
+                    //get range measurement (2 bytes)
+                    memcpy( &range_value, &currentBufp->at(currentDatap), sizeof(range_value));
+                    currentDatap += ( sizeof(range_value) );
+                    range_scan.rangeIntensities[k/2] = range_value;
+                    k += ( sizeof(range_value) );
+                    //ROS_INFO("%f", (float)k / 2 * vrange);
+                    //range_array.data.insert(range_array.data.end(), range_value);
+                }
+                range_scan.rangeResolution = vrange;
+                //range_scan.rangeScan. insert(dataVec.end(), &dataArray[0], &dataArray[dataArraySize]);
+                //range_scan.rangeScan. (range_array, range_array + sizeof(range_array) / sizeof(uint32_t));
+                //std::vector<uint32_t> range_vector (range_array, range_array + sizeof(range_array) / sizeof(uint32_t));
+                range_scan_pub.publish(range_scan);
+              
+                //ROS_INFO("DataUARTHandler Sort Thread : Parsing Range Profile i=%d and tlvLen = %u", i, tlvLen);
 
-
-              sorterState = CHECK_TLV_TYPE;
+                sorterState = CHECK_TLV_TYPE;
             }
             
             break;
             
         case READ_NOISE:
             {
-        
-              i = 0;
-            
-              while (i++ < tlvLen - 1)
-              {
-                     //ROS_INFO("DataUARTHandler Sort Thread : Parsing Noise Profile i=%d and tlvLen = %u", i, tlvLen);
-              }
-            
-              currentDatap += tlvLen;
+                uint16_t noise_value = 0;
+                ti_mmwave_rospkg::RangeScan noise_scan;
+                int k = 0;
+                while (k < tlvLen) {
+                    //get range measurement (2 bytes)
+                    memcpy( &noise_value, &currentBufp->at(currentDatap), sizeof(noise_value));
+                    currentDatap += ( sizeof(noise_value) );
+                    noise_scan.rangeIntensities[k/2] = noise_value;
+                    k += ( sizeof(noise_value) );
+                }
+                noise_scan.rangeResolution = vrange;
+                noise_scan_pub.publish(noise_scan);
+                
+                //ROS_INFO("DataUARTHandler Sort Thread : Parsing Noise Profile i=%d and tlvLen = %u", i, tlvLen);
             
               sorterState = CHECK_TLV_TYPE;
             }
@@ -641,6 +701,7 @@ void *DataUARTHandler::sortIncomingData( void )
                     //ROS_INFO("DataUARTHandler Sort Thread: number of obj = %d", mmwData.numObjOut );
                     
                     DataUARTHandler_pub.publish(RScan);
+                    radar_scans_pub.publish(radarScans);
                 }
 
                 //ROS_INFO("DataUARTHandler Sort Thread : CHECK_TLV_TYPE state says tlvCount max was reached, going to switch buffer state");

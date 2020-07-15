@@ -1,3 +1,5 @@
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 cmake_minimum_required(VERSION 2.8.3)
 project(ti_mmwave_rospkg)
 
@@ -60,6 +62,9 @@ find_package(PCL 1.7.2 REQUIRED)
 add_message_files(
   FILES
   RadarScan.msg
+  RadarScans.msg
+  RangeScan.msg
+  ObjRanges.msg
 )
 
 ## Generate services in the 'srv' folder
