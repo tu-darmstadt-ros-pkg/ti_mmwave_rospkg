@@ -35,10 +35,10 @@ bool mmWaveCommSrv::commSrv_cb(mmWaveCLI::Request &req , mmWaveCLI::Response &re
         mySerialObject.open();
     } catch (std::exception &e1) {
         ROS_INFO("mmWaveCommSrv: Failed to open User serial port with error: %s", e1.what());
-        ROS_INFO("mmWaveCommSrv: Waiting 20 seconds before trying again...");
+        ROS_INFO("mmWaveCommSrv: Waiting 5 seconds before trying again...");
         try {
-            // Wait 20 seconds and try to open serial port again
-            ros::Duration(20).sleep();
+            // Wait 5 seconds and try to open serial port again
+            ros::Duration(5).sleep();
             mySerialObject.open();
         } catch (std::exception &e2) {
             ROS_ERROR("mmWaveCommSrv: Failed second time to open User serial port, error: %s", e1.what());

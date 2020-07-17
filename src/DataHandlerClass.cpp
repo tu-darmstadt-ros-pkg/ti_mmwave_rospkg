@@ -571,7 +571,7 @@ void *DataUARTHandler::sortIncomingData( void )
                     //get range measurement (2 bytes)
                     memcpy( &range_value, &currentBufp->at(currentDatap), sizeof(range_value));
                     currentDatap += ( sizeof(range_value) );
-                    range_scan.rangeIntensities[k/2] = range_value;
+                    range_scan.rangeIntensities[k/2] = 10 * log10(range_value + 1);
                     k += ( sizeof(range_value) );
                     //ROS_INFO("%f", (float)k / 2 * vrange);
                     //range_array.data.insert(range_array.data.end(), range_value);
