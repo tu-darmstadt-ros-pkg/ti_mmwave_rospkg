@@ -32,8 +32,13 @@
 #include <ti_mmwave_rospkg/RangeScan.h>
 #include <ti_mmwave_rospkg/ObjRanges.h>
 #include <ti_mmwave_rospkg/RadarScans.h>
+#include <ti_mmwave_rospkg/RadarCube.h>
+#include "FftRealPair.hpp"
 #include "NumCpp.hpp"
+#include <algorithm>
 
+#define NUM_ANGLE_BINS 64
+#define noOfRangeBins 256
 
 class DataUARTHandler{
     
@@ -77,6 +82,7 @@ private:
     int nr;
     int nd;
     int ntx;
+    int nrx;
     float fs;
     float fc;
     float BW;
@@ -84,6 +90,7 @@ private:
     float tfr;
     float max_range;
     float vrange;
+    float vazimuth;
     float max_vel;
     float vvel;
 
@@ -157,6 +164,7 @@ private:
     ros::Publisher range_scan_pub;
     ros::Publisher noise_scan_pub;
     ros::Publisher obj_range_scan_pub;
+    ros::Publisher radar_cube_pub;
 };
 
 #endif 

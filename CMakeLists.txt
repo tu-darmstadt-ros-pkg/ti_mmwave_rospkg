@@ -65,6 +65,8 @@ add_message_files(
   RadarScans.msg
   RangeScan.msg
   ObjRanges.msg
+  RangeBins.msg
+  RadarCube.msg
 )
 
 ## Generate services in the 'srv' folder
@@ -151,6 +153,7 @@ add_library(mmwave
   src/DataHandlerClass.cpp
   src/mmWaveQuickConfig.cpp
   src/ParameterParser.cpp
+  src/FftRealPair.cpp
 )
 
 ## Add cmake target dependencies of the library
@@ -200,11 +203,11 @@ add_dependencies(mmwave ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TA
 # )
 
 ## Mark cpp header files for installation
-# install(DIRECTORY include/${PROJECT_NAME}/
-#   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-#   FILES_MATCHING PATTERN "*.h"
-#   PATTERN ".svn" EXCLUDE
-# )
+install(DIRECTORY include/${PROJECT_NAME}/
+  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+  FILES_MATCHING PATTERN "*.h"
+  PATTERN ".svn" EXCLUDE
+)
 
 ## Mark other files for installation (e.g. launch and bag files, etc.)
 # install(FILES

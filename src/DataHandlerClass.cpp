@@ -13,6 +13,7 @@ DataUARTHandler::DataUARTHandler(ros::NodeHandle* nh) : currentBufp(&pingPongBuf
     range_scan_pub = nh->advertise<ti_mmwave_rospkg::RangeScan>("/ti_mmwave/range_scan", 100);
     noise_scan_pub = nh->advertise<ti_mmwave_rospkg::RangeScan>("/ti_mmwave/noise_scan", 100);
     obj_range_scan_pub = nh->advertise<ti_mmwave_rospkg::ObjRanges>("/ti_mmwave/obj_range_scan", 100);
+    radar_cube_pub = nh->advertise<ti_mmwave_rospkg::RadarCube>("/ti_mmwave/radar_cube", 100);
 
     // Wait for parameters
     while(!nh->hasParam("/ti_mmwave/doppler_vel_resolution")){}
@@ -20,6 +21,7 @@ DataUARTHandler::DataUARTHandler(ros::NodeHandle* nh) : currentBufp(&pingPongBuf
     nh->getParam("/ti_mmwave/numAdcSamples", nr);
     nh->getParam("/ti_mmwave/numLoops", nd);
     nh->getParam("/ti_mmwave/num_TX", ntx);
+    nh->getParam("/ti_mmwave/num_RX", nrx);
     nh->getParam("/ti_mmwave/f_s", fs);
     nh->getParam("/ti_mmwave/f_c", fc);
     nh->getParam("/ti_mmwave/BW", BW);
@@ -250,6 +252,7 @@ void *DataUARTHandler::sortIncomingData( void )
     
     boost::shared_ptr<pcl::PointCloud<pcl::PointXYZI>> RScan(new pcl::PointCloud<pcl::PointXYZI>);
     ti_mmwave_rospkg::RadarScan radarscan;
+    ti_mmwave_rospkg::RadarCube radar_cube;
 
     ti_mmwave_rospkg::ObjRanges objRanges;
     ti_mmwave_rospkg::RadarScans radarScans;
@@ -606,24 +609,80 @@ void *DataUARTHandler::sortIncomingData( void )
                 
                 //ROS_INFO("DataUARTHandler Sort Thread : Parsing Noise Profile i=%d and tlvLen = %u", i, tlvLen);
             
-              sorterState = CHECK_TLV_TYPE;
+                sorterState = CHECK_TLV_TYPE;
             }
            
             break;
             
         case READ_AZIMUTH:
             {
-        
-              i = 0;
-            
-              while (i++ < tlvLen - 1)
-              {
-                     //ROS_INFO("DataUARTHandler Sort Thread : Parsing Azimuth Profile i=%d and tlvLen = %u", i, tlvLen);
-              }
-            
-              currentDatap += tlvLen;
-            
-              sorterState = CHECK_TLV_TYPE;
+                ROS_INFO("DataUARTHandler Sort Thread : Parsing Azimuth-Heat Profile i=%d and tlvLen = %u", i, tlvLen);
+                int k = 0;
+                
+                std::vector<int16_t, std::allocator<int16_t>> real;
+                std::vector<int16_t, std::allocator<int16_t>> imag; 
+
+                radar_cube.header.frame_id = frameID;
+                radar_cube.header.stamp = ros::Time::now();
+
+                real.resize(tlvLen / (2 * sizeof(int16_t)));
+                imag.resize(tlvLen / (2 * sizeof(int16_t)));
+
+                uint16_t c = 0;
+                while (k < tlvLen) {
+                    memcpy( &real[c], &currentBufp->at(currentDatap), sizeof(int16_t));
+                    // if (real[c] > 32767) real[c] = real[c] - 65536;
+                    currentDatap += sizeof(int16_t);
+                    memcpy( &imag[c], &currentBufp->at(currentDatap), sizeof(int16_t));
+                    // if (imag[c] > 32767) imag[c] = imag[c] - 65536;
+                    currentDatap += sizeof(int16_t);
+                    k += sizeof(int16_t) * 2;
+                    c++;
+                        //ROS_INFO("DataUARTHandler Sort Thread : Parsing Azimuth Profile i=%d and tlvLen = %u", i, tlvLen);
+                }
+                
+                radar_cube.real = real;
+                radar_cube.imag = imag;
+                // Perform FFT for Heatmap. TODO: 256 is noOfRangeBins
+                // std::vector<std::vector<double> > QQ(noOfRangeBins, std::vector<double>(NUM_ANGLE_BINS));
+
+                radar_cube.range_bins_per_azimuth.resize(noOfRangeBins);
+                auto QQ = &radar_cube.range_bins_per_azimuth;
+
+                for (int tmpc = 0; tmpc < noOfRangeBins; tmpc++) {
+                    std::vector<double> re(NUM_ANGLE_BINS, 0.0);
+                    std::vector<double> im(NUM_ANGLE_BINS, 0.0);
+                    for (int tmpr = 0; tmpr < ntx * nrx; tmpr++) {
+                        re[tmpr] = real[tmpr + tmpc * ntx * nrx];
+                        im[tmpr] = imag[tmpr + tmpc * ntx * nrx];
+                    }
+                    Fft::transform(re, im);
+                    for (int ri = 0; ri < NUM_ANGLE_BINS; ri++) {
+                        re[ri] = sqrt(re[ri] * re[ri] + im[ri] * im[ri]);  // abs()
+                    }
+                    ti_mmwave_rospkg::RangeBins temp;
+                    temp.range_bins.resize(NUM_ANGLE_BINS);
+                    for (uint16_t slice1 = NUM_ANGLE_BINS / 2; slice1 < NUM_ANGLE_BINS; slice1++) {
+                        temp.range_bins[slice1 - NUM_ANGLE_BINS / 2] = re[slice1];
+                    }
+                    for (uint16_t slice2 = 0; slice2 < NUM_ANGLE_BINS / 2; slice2++) {
+                        temp.range_bins[slice2 + NUM_ANGLE_BINS / 2] = re[slice2];
+                    }
+                    radar_cube.range_bins_per_azimuth[tmpc] = temp;  // equals: QQ[tmpc] = (real.slice(NUM_ANGLE_BINS / 2).concat(real.slice(0, NUM_ANGLE_BINS / 2)));
+                }
+                // // reverse QQ:
+                for (uint16_t rev=0; rev < noOfRangeBins; rev++) {
+                    std::reverse(radar_cube.range_bins_per_azimuth[rev].range_bins.begin(), radar_cube.range_bins_per_azimuth[rev].range_bins.end());
+                    radar_cube.range_bins_per_azimuth[rev].range_bins.pop_back();  // decrease size by one?
+                }
+                ROS_INFO("Finished.");
+                // QQ has size: 256 * 63 = noOfRangeBins x (NUM_ANGLE_BINS - 1)
+                radar_cube.range_resolution = vrange;
+                radar_cube.start_angle = 15;
+                radar_cube.end_angle = 180 - 15;
+                radar_cube.azimuth_resolution = 150 / 64;
+                radar_cube_pub.publish(radar_cube);
+                sorterState = CHECK_TLV_TYPE;
             }
             
             break;

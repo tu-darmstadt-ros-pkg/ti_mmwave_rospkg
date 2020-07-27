@@ -8,6 +8,15 @@ ParameterParser::ParameterParser() {}
 
 void ParameterParser::onInit() {}
 
+uint16_t countSetBits(unsigned int mask) { 
+    unsigned int count = 0; 
+    while (mask) { 
+        count += mask & 1; 
+        mask >>= 1; 
+    } 
+    return count; 
+}
+
 void ParameterParser::ParamsParser(ti_mmwave_rospkg::mmWaveCLI &srv, ros::NodeHandle &nh) {
 
     //   ROS_ERROR("%s",srv.request.comm.c_str());
@@ -52,6 +61,12 @@ void ParameterParser::ParamsParser(ti_mmwave_rospkg::mmWaveCLI &srv, ros::NodeHa
                     nh.setParam("/ti_mmwave/numFrames", std::stoi(token)); break;
                 case 5:
                     nh.setParam("/ti_mmwave/framePeriodicity", std::stof(token)); break;
+                }
+            } else if (!req.compare("channelCfg")) {
+                switch (i) {
+                case 1:
+                    uint16_t rx_mask = countSetBits(std::stoi(token));
+                    nh.setParam("/ti_mmwave/num_RX", rx_mask); break;
                 }
             }
         } else req = token;
