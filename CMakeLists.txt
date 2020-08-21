@@ -14,6 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   serial
   std_msgs
+  tf
   sensor_msgs
   message_generation
   pluginlib
