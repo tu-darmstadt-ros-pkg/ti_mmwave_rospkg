@@ -83,6 +83,7 @@ private:
     int nd;
     int ntx;
     int nrx;
+    int num_range_bins;
     float fs;
     float fc;
     float BW;
@@ -93,6 +94,7 @@ private:
     float vazimuth;
     float max_vel;
     float vvel;
+    float range_bias;
 
     char* frameID;
     /*Contains the name of the serial port*/

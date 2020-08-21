@@ -68,6 +68,11 @@ void ParameterParser::ParamsParser(ti_mmwave_rospkg::mmWaveCLI &srv, ros::NodeHa
                     uint16_t rx_mask = countSetBits(std::stoi(token));
                     nh.setParam("/ti_mmwave/num_RX", rx_mask); break;
                 }
+            } else if (!req.compare("compRangeBiasAndRxChanPhase")) {
+                switch (i) {
+                case 1:
+                    nh.setParam("/ti_mmwave/range_bias", std::stof(token)); break;
+                }
             }
         } else req = token;
         i++;
@@ -110,9 +115,12 @@ void ParameterParser::CalParams(ros::NodeHandle &nh) {
     float adc_duration = nr / fs;
     float BW = adc_duration * kf;
     float PRI = (idleTime + rampEndTime) * 1e-6;
-    float fc = startFreq * 1e9 + kf * (adcStartTime * 1e-6 + adc_duration / 2); 
+    float fc = startFreq * 1e9 + kf * (adcStartTime * 1e-6 + adc_duration / 2);
 
-    float vrange = c0 / (2 * BW);
+    int num_range_bins = 1 << (int)ceil(log2(numAdcSamples));
+    float vrange = 300 * digOutSampleRate / (2 * freqSlopeConst * 1e3 * num_range_bins);
+
+    // float vrange = c0 / (2 * BW);  // wrong value!
     float max_range = nr * vrange;
     float max_vel = c0 / (2 * fc * PRI) / ntx;
     float vvel = max_vel / nd;
@@ -123,6 +131,7 @@ void ParameterParser::CalParams(ros::NodeHandle &nh) {
     nh.setParam("/ti_mmwave/BW", BW);
     nh.setParam("/ti_mmwave/PRI", PRI);
     nh.setParam("/ti_mmwave/t_fr", tfr);
+    nh.setParam("/ti_mmwave/num_range_bins", num_range_bins);
     nh.setParam("/ti_mmwave/max_range", max_range);
     nh.setParam("/ti_mmwave/range_resolution", vrange);
     nh.setParam("/ti_mmwave/max_doppler_vel", max_vel);
