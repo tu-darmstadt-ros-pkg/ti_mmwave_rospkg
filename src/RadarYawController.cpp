@@ -3,6 +3,7 @@
 #include "ti_mmwave_rospkg/RadarCube.h"
 #include "std_msgs/Float64.h"
 #include <string>
+#include <tf/transform_broadcaster.h>
 // #include "NumCpp.hpp"
 #include <math.h>
 
@@ -29,6 +30,15 @@ void set_position_deg(float new_yaw) {
   ROS_INFO("Moving to new pos: %f", new_yaw);
   radar_yaw_cmd.publish(new_yaw_rad);
   current_yaw = new_yaw_rad.data;
+
+  static tf::TransformBroadcaster br;
+  tf::Transform transform;
+  transform.setOrigin( tf::Vector3(-0.065, 0.000, 0.043) );
+  tf::Quaternion q;
+  q.setRPY(0, 0, new_yaw_rad.data);
+  transform.setRotation(q);
+  br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "base_link", "radar_link"));
+
 }
 
 void set_next_pos() {
