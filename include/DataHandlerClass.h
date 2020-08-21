@@ -34,7 +34,7 @@
 #include <ti_mmwave_rospkg/RadarScans.h>
 #include <ti_mmwave_rospkg/RadarCube.h>
 #include "FftRealPair.hpp"
-#include "NumCpp.hpp"
+// #include "NumCpp.hpp"
 #include <algorithm>
 
 #define NUM_ANGLE_BINS 64
