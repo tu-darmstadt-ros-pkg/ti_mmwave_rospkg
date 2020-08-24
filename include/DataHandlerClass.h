@@ -95,6 +95,7 @@ private:
     float max_vel;
     float vvel;
     float range_bias;
+    bool first_start = true;
 
     char* frameID;
     /*Contains the name of the serial port*/
