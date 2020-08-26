@@ -43,11 +43,13 @@ void transform_yaw_pos(float current_yaw) {
   static tf::TransformBroadcaster br;
   tf::Transform transform;
   transform.setOrigin( tf::Vector3(-0.065, 0.000, 0.043) );  //TODO Update according to URDF!
+  // transform.setOrigin( tf::Vector3(0.0, 0.0, 0.0) );  //TODO Update according to URDF!
   tf::Quaternion q;
   q.setRPY(0, 0, current_yaw + (M_PI * -195 / 180)); //TODO
+  // q.setRPY(0, 0, current_yaw); //TODO
   transform.setRotation(q);
   // br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "base_link", "radar_link"));
-  br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "radar_link", "ti_mmwave"));
+  br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "radar_link", "ti_mmwave_pcl"));
 }
 
 void set_velocity(const sensor_msgs::JointState &MotorState) {
@@ -111,7 +113,7 @@ void stop_motor(int sig) {
     ros::shutdown();
   }
   else {
-    radar_yaw_cmd.publish(START_ANGLE);
+    set_position_deg(START_ANGLE_DEG);
     ros::shutdown();
   }
 }
