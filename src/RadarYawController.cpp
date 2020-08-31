@@ -42,8 +42,8 @@ float positions[] = { 90.,  95., 100., 105., 110., 115., 120., 125., 130., 135.,
 void transform_yaw_pos(float current_yaw) {
   static tf::TransformBroadcaster br;
   tf::Transform transform;
-  transform.setOrigin( tf::Vector3(-0.065, 0.000, 0.043) );  //TODO Update according to URDF!
-  // transform.setOrigin( tf::Vector3(0.0, 0.0, 0.0) );  //TODO Update according to URDF!
+  // transform.setOrigin( tf::Vector3(-0.065, 0.000, 0.043) );  //TODO Update according to URDF!
+  transform.setOrigin( tf::Vector3(0.0, 0.0, 0.0) );
   tf::Quaternion q;
   q.setRPY(0, 0, current_yaw + (M_PI * -195 / 180)); //TODO
   // q.setRPY(0, 0, current_yaw); //TODO
