@@ -40,21 +40,21 @@ float positions[] = { 90.,  95., 100., 105., 110., 115., 120., 125., 130., 135.,
 //                                nc::arange<float>(PI - PI / 2, PI, STEPS_PER_HALF_REV / 2), });
 
 void transform_yaw_pos(float current_yaw) {
-  static tf::TransformBroadcaster br;
-  tf::Transform transform;
-  // transform.setOrigin( tf::Vector3(-0.065, 0.000, 0.043) );  //TODO Update according to URDF!
-  transform.setOrigin( tf::Vector3(0.0, 0.0, 0.0) );
-  tf::Quaternion q;
-  q.setRPY(0, 0, current_yaw + (M_PI * -195 / 180)); //TODO
-  // q.setRPY(0, 0, current_yaw); //TODO
-  transform.setRotation(q);
-  // br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "base_link", "radar_link"));
-  br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "radar_link", "ti_mmwave_pcl"));
+  // static tf::TransformBroadcaster br;
+  // tf::Transform transform;
+  // // transform.setOrigin( tf::Vector3(-0.065, 0.000, 0.043) );  // TODO Update according to URDF!
+  // transform.setOrigin( tf::Vector3(0.0, 0.0, 0.0) );
+  // tf::Quaternion q;
+  // q.setRPY(0, 0, current_yaw + (M_PI * -195 / 180));  // TODO variable Mounting position, not only 195°
+  // // q.setRPY(0, 0, current_yaw);  // TODO
+  // transform.setRotation(q);
+  // // br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "base_link", "radar_link"));
+  // br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "radar_link", "ti_mmwave_pcl"));
 }
 
 void set_velocity(const sensor_msgs::JointState &MotorState) {
   radar_yaw_cmd.publish(velocity);
-  transform_yaw_pos(MotorState.position[0]);
+  // transform_yaw_pos(MotorState.position[0]);
   if (MotorState.position[0] > MAX_ANGLE) {
     velocity.data = -abs(velocity.data);
     radar_yaw_cmd.publish(velocity);
@@ -136,7 +136,7 @@ int main(int argc, char **argv)
     set_position_deg(START_ANGLE);
     // radar_yaw_cmd.publish(START_ANGLE);
     sub = n.subscribe("/ti_mmwave/radar_cube", 10, move_to_new_pos);
-    sub_rate = n.subscribe("/joint_states", 10, transform_pcl);
+    // sub_rate = n.subscribe("/joint_states", 10, transform_pcl);
   }
   else {
     velocity.data = 1.0;
