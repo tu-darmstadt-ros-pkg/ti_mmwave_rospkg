@@ -1,0 +1,5 @@
+<launch>
+
+  <node pkg="ti_mmwave_rospkg" type="radar_yaw_controller" name="RadarYawController" args="/arm_control/radar_yaw_velocity_controller/command 1" output="screen" />
+
+</launch>
