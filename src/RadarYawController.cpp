@@ -134,13 +134,9 @@ int main(int argc, char **argv)
   ROS_INFO("Init");
   std::string controller_cmd_topic = argv[1];  // /arm_control/radar_yaw_position_controller/command
   smooth_yaw = atoi(argv[2]);
-  ROS_INFO("....");
-  ROS_INFO("%s", argv[3]);
-  ROS_INFO("%f", (float)atoi(argv[3]));
-  ROS_INFO("%f", (float)atoi(argv[4]));
   min_angle = ((205 + (float)atoi(argv[3])) * M_PI / 180);
   max_angle = ((205 + (float)atoi(argv[4])) * M_PI / 180);
-  ROS_INFO("Min Angle / Max Angle: %f / %f", min_angle * 180 / M_PI, max_angle * 180 / M_PI);
+  ROS_INFO("Min Angle / Max Angle: %.2f / %.2f", min_angle * 180 / M_PI, max_angle * 180 / M_PI);
   radar_yaw_cmd = n.advertise<std_msgs::Float64>(controller_cmd_topic, 10);
   ros::Subscriber sub;
   ros::Subscriber sub_rate;
@@ -152,7 +148,7 @@ int main(int argc, char **argv)
   }
   else {
     velocity.data = 1.0;
-    ROS_INFO("Smooth control, %f", velocity.data);
+    // ROS_INFO("Smooth control, %f", velocity.data);
     radar_yaw_cmd.publish(velocity);
     sub = n.subscribe("/joint_states", 10, set_velocity);
   }
