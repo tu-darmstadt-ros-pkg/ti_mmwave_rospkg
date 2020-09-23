@@ -133,7 +133,7 @@ int main(int argc, char **argv)
   ROS_INFO("Init");
   std::string controller_cmd_topic = argv[1];  // /arm_control/radar_yaw_position_controller/command
   smooth_yaw = atoi(argv[2]);
-  min_angle = ((205 - (float)atoi(argv[4])) * M_PI / 180);
+  min_angle = ((205 - (float)atoi(argv[3])) * M_PI / 180);
   max_angle = ((205 + (float)atoi(argv[4])) * M_PI / 180);
   radar_yaw_cmd = n.advertise<std_msgs::Float64>(controller_cmd_topic, 10);
   ros::Subscriber sub;
