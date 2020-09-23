@@ -10,7 +10,7 @@
 #include <math.h>
 
 #define STEP_INCREMENT 2.5
-#define MAX_ANGLE ((295 - 45) * M_PI / 180)
+#define MAX_ANGLE ((285 - 45) * M_PI / 180)
 #define MIN_ANGLE ((105 + 45) * M_PI / 180)
 #define MAX_ANGLE_DEG MAX_ANGLE * 180 / M_PI
 #define MIN_ANGLE_DEG MIN_ANGLE * 180 / M_PI
@@ -102,7 +102,7 @@ void set_next_pos() {
 }
 
 void move_to_new_pos(const ti_mmwave_rospkg::RadarCube &RadarScan) {
-  ros::Duration(0.1).sleep();  // wait for the radar to perform the chirps and go into transfer state. 
+  ros::Duration(0.1).sleep();  // wait for the radar to perform the chirps and go into transfer state.
   set_next_pos(); // move radar while in transfer state
 }
 
