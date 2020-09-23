@@ -125,9 +125,10 @@ void stop_motor(int sig) {
 
 int main(int argc, char **argv)
 {
-  if (argc < 5)
+  if (argc < 5) {
     ROS_INFO("Please provide enough arguments: ControllerTopic, Speed/Velocity Control (0/1), Min_Angle, Max_Angle");
     return 0;
+  }
   ros::init(argc, argv, "radar_yaw_controller");
   ros::NodeHandle n;
   ROS_INFO("Init");
