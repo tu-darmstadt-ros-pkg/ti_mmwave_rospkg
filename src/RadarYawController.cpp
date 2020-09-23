@@ -133,6 +133,7 @@ int main(int argc, char **argv)
   ROS_INFO("Init");
   std::string controller_cmd_topic = argv[1];  // /arm_control/radar_yaw_position_controller/command
   smooth_yaw = atoi(argv[2]);
+  ROS_INFO("....");
   ROS_INFO("%s", argv[3]);
   ROS_INFO("%f", (float)atoi(argv[3]));
   ROS_INFO("%f", (float)atoi(argv[4]));
