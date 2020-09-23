@@ -10,8 +10,8 @@
 #include <math.h>
 
 #define STEP_INCREMENT 2.5
-#define MAX_ANGLE ((285 - 45) * M_PI / 180)
-#define MIN_ANGLE ((105 + 45) * M_PI / 180)
+#define MAX_ANGLE ((295 - 45) * M_PI / 180)
+#define MIN_ANGLE ((115 + 45) * M_PI / 180)
 #define MAX_ANGLE_DEG MAX_ANGLE * 180 / M_PI
 #define MIN_ANGLE_DEG MIN_ANGLE * 180 / M_PI
 #define START_ANGLE ((180 + 15) * M_PI / 180)
