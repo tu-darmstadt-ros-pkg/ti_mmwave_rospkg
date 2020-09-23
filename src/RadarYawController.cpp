@@ -131,7 +131,6 @@ int main(int argc, char **argv)
   }
   ros::init(argc, argv, "radar_yaw_controller");
   ros::NodeHandle n;
-  ROS_INFO("Init");
   std::string controller_cmd_topic = argv[1];  // /arm_control/radar_yaw_position_controller/command
   // smooth_yaw = atoi(argv[2]);
   smooth_yaw = 1;
