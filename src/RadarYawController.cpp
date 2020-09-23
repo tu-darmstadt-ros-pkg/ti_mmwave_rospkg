@@ -151,7 +151,7 @@ int main(int argc, char **argv)
     velocity.data = vel;
     // ROS_INFO("Smooth control, %f", velocity.data);
     radar_yaw_cmd.publish(velocity);
-    sub = n.subscribe("/joint_states", 10, set_velocity);
+    sub = n.subscribe("/joint_states", 1, set_velocity);
   }
   signal(SIGINT, stop_motor);
   ros::spin();
