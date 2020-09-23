@@ -19,6 +19,9 @@
 // #define STEPS_PER_HALF_REV 6
 // #define STEP_INCREMENT 180 / STEPS_PER_HALF_REV
 
+float min_angle = MIN_ANGLE;
+float max_angle = MAX_ANGLE;
+
 // ros::Publisher radar_yaw_position;
 ros::Publisher radar_yaw_cmd;
 float current_yaw = M_PI;
@@ -55,11 +58,11 @@ void transform_yaw_pos(float current_yaw) {
 void set_velocity(const sensor_msgs::JointState &MotorState) {
   radar_yaw_cmd.publish(velocity);
   // transform_yaw_pos(MotorState.position[0]);
-  if (MotorState.position[0] > MAX_ANGLE) {
+  if (MotorState.position[0] > max_angle) {
     velocity.data = -abs(velocity.data);
     radar_yaw_cmd.publish(velocity);
   }
-  if (MotorState.position[0] < MIN_ANGLE) {
+  if (MotorState.position[0] < min_angle) {
     velocity.data = abs(velocity.data);
     radar_yaw_cmd.publish(velocity);
   }
@@ -122,13 +125,16 @@ void stop_motor(int sig) {
 
 int main(int argc, char **argv)
 {
-  if (argc < 3)
+  if (argc < 5)
+    ROS_INFO("Please provide enough arguments: ControllerTopic, Speed/Velocity Control (0/1), Min_Angle, Max_Angle");
     return 0;
   ros::init(argc, argv, "radar_yaw_controller");
   ros::NodeHandle n;
   ROS_INFO("Init");
   std::string controller_cmd_topic = argv[1];  // /arm_control/radar_yaw_position_controller/command
   smooth_yaw = atoi(argv[2]);
+  min_angle = atoi(argv[3]);
+  max_angle = atoi(argv[4]);
   radar_yaw_cmd = n.advertise<std_msgs::Float64>(controller_cmd_topic, 10);
   ros::Subscriber sub;
   ros::Subscriber sub_rate;
