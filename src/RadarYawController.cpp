@@ -125,17 +125,18 @@ void stop_motor(int sig) {
 
 int main(int argc, char **argv)
 {
-  if (argc < 5) {
-    ROS_INFO("Please provide enough arguments: ControllerTopic, Speed/Velocity Control (0/1), Min_Angle, Max_Angle");
+  if (argc < 4) {
+    ROS_INFO("Please provide enough arguments: ControllerTopic, Min_Angle, Max_Angle");
     return 0;
   }
   ros::init(argc, argv, "radar_yaw_controller");
   ros::NodeHandle n;
   ROS_INFO("Init");
   std::string controller_cmd_topic = argv[1];  // /arm_control/radar_yaw_position_controller/command
-  smooth_yaw = atoi(argv[2]);
-  min_angle = ((205 + (float)atoi(argv[3])) * M_PI / 180);
-  max_angle = ((205 + (float)atoi(argv[4])) * M_PI / 180);
+  // smooth_yaw = atoi(argv[2]);
+  smooth_yaw = 1;
+  min_angle = ((205 + (float)atoi(argv[2])) * M_PI / 180);
+  max_angle = ((205 + (float)atoi(argv[3])) * M_PI / 180);
   ROS_INFO("Min Angle / Max Angle: %.2f / %.2f", min_angle * 180 / M_PI, max_angle * 180 / M_PI);
   radar_yaw_cmd = n.advertise<std_msgs::Float64>(controller_cmd_topic, 10);
   ros::Subscriber sub;
